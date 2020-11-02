@@ -7,12 +7,13 @@ import java.util.List;
 
 import seedu.address.commons.core.Messages;
 import seedu.address.commons.core.index.Index;
+import seedu.address.logic.CommandHistory;
 import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.model.Model;
 import seedu.address.model.person.Order;
 
 /**
- * Deletes a person identified using it's displayed index from the address book.
+ * Deletes an order identified using it's displayed index from the address book.
  */
 public class DeleteOrderCommand extends Command {
 
@@ -32,16 +33,30 @@ public class DeleteOrderCommand extends Command {
     }
 
     @Override
-    public CommandResult execute(Model model) throws CommandException {
+    public CommandResult execute(Model model, CommandHistory history) throws CommandException {
         requireNonNull(model);
         List<Order> lastShownList = model.getFilteredOrderList();
+        int targetId = targetIndex.getOneBased();
 
-        if (targetIndex.getZeroBased() >= lastShownList.size()) {
+
+        boolean isOrderFound = false;
+        Order orderToDelete = null;
+        for (Order order : lastShownList) {
+            if (order.getOrderId().getZeroBased() == targetId) {
+                // order is found with correct order id
+                orderToDelete = order;
+                isOrderFound = true;
+                break;
+            }
+        }
+
+        if (!isOrderFound) {
             throw new CommandException(Messages.MESSAGE_INVALID_ORDER_DISPLAYED_INDEX);
         }
 
-        Order orderToDelete = lastShownList.get(targetIndex.getZeroBased());
+        requireNonNull(orderToDelete);
         model.deleteOrder(orderToDelete);
+        model.commitAddressBook();
         return new CommandResult(String.format(MESSAGE_DELETE_ORDER_SUCCESS, orderToDelete));
     }
 

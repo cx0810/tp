@@ -2,14 +2,15 @@ package seedu.address.ui;
 
 import java.util.logging.Logger;
 
-import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.geometry.Pos;
+import javafx.scene.Scene;
 import javafx.scene.control.Button;
-import javafx.scene.control.MenuItem;
-import javafx.scene.control.TextInputControl;
+import javafx.scene.control.Label;
 import javafx.scene.input.KeyCombination;
-import javafx.scene.input.KeyEvent;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import seedu.address.commons.core.GuiSettings;
 import seedu.address.commons.core.LogsCenter;
@@ -17,15 +18,18 @@ import seedu.address.logic.Logic;
 import seedu.address.logic.commands.CommandResult;
 import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.logic.parser.exceptions.ParseException;
+import seedu.address.model.person.Client;
+import seedu.address.model.person.Order;
+import seedu.address.ui.events.LogOnceEvent;
+import seedu.address.ui.events.LogOnceEventHandler;
 
 /**
  * The Main Window. Provides the basic application layout containing
  * a menu bar and space where other JavaFX elements can be placed.
  */
 public class MainWindow extends UiPart<Stage> {
-
     private static final String FXML = "NewMainWindow.fxml";
-
+    private static MainWindow mainWindow = null;
     private final Logger logger = LogsCenter.getLogger(getClass());
 
     private Stage primaryStage;
@@ -33,8 +37,15 @@ public class MainWindow extends UiPart<Stage> {
 
     // Independent Ui parts residing in this Ui container
     private PersonListPanel personListPanel;
+    private OrderListPanel orderListPanel;
     private ResultDisplay resultDisplay;
     private HelpWindow helpWindow;
+    private ErrorWindow errorWindow;
+    private NewClientForm newClientForm;
+    private NewOrderForm newOrderForm;
+
+    // Stores the state of the view
+    private Page currentPage;
 
     @FXML
     private StackPane commandBoxPlaceholder;
@@ -46,15 +57,21 @@ public class MainWindow extends UiPart<Stage> {
     private StackPane personListPanelPlaceholder;
 
     @FXML
-    private StackPane resultDisplayPlaceholder;
+    private HBox resultDisplayPlaceholder;
 
     @FXML
-    private StackPane statusbarPlaceholder;
+    private HBox statusbarPlaceholder;
+
+    @FXML
+    private Label listTitle;
+
+    @FXML
+    private VBox extraInfoPlaceholder;
 
     /**
      * Creates a {@code MainWindow} with the given {@code Stage} and {@code Logic}.
      */
-    public MainWindow(Stage primaryStage, Logic logic) {
+    private MainWindow(Stage primaryStage, Logic logic) {
         super(FXML, primaryStage);
 
         // Set dependencies
@@ -63,10 +80,25 @@ public class MainWindow extends UiPart<Stage> {
 
         // Configure the UI
         setWindowDefaultSize(logic.getGuiSettings());
-
-        // setAccelerators();
+        setAccelerators();
+        setEventHandlers();
 
         helpWindow = new HelpWindow();
+        errorWindow = new ErrorWindow();
+        newClientForm = new NewClientForm(this);
+        newOrderForm = new NewOrderForm(this);
+
+        currentPage = Page.CLIENTS;
+    }
+
+    public static MainWindow setInstance(Stage primaryStage, Logic logic) {
+        mainWindow = new MainWindow(primaryStage, logic);
+        return mainWindow;
+    }
+
+    public static MainWindow getInstance() {
+        assert mainWindow != null;
+        return mainWindow;
     }
 
     public Stage getPrimaryStage() {
@@ -74,39 +106,58 @@ public class MainWindow extends UiPart<Stage> {
     }
 
     private void setAccelerators() {
-        // setAccelerator(helpMenuButton, KeyCombination.valueOf("F1"));
+        setButtonAccelerator(helpMenuButton, KeyCombination.valueOf("F1"));
     }
 
-    /**
-     * Sets the accelerator of a MenuItem.
-     * @param keyCombination the KeyCombination value of the accelerator
-     */
-    private void setAccelerator(MenuItem menuItem, KeyCombination keyCombination) {
-        menuItem.setAccelerator(keyCombination);
+    private void setButtonAccelerator(Button button, KeyCombination keyCombination) {
+        assert(button != null);
 
-        /*
-         * TODO: the code below can be removed once the bug reported here
-         * https://bugs.openjdk.java.net/browse/JDK-8131666
-         * is fixed in later version of SDK.
-         *
-         * According to the bug report, TextInputControl (TextField, TextArea) will
-         * consume function-key events. Because CommandBox contains a TextField, and
-         * ResultDisplay contains a TextArea, thus some accelerators (e.g F1) will
-         * not work when the focus is in them because the key event is consumed by
-         * the TextInputControl(s).
-         *
-         * For now, we add following event filter to capture such key events and open
-         * help window purposely so to support accelerators even when focus is
-         * in CommandBox or ResultDisplay.
-         */
+        Scene scene = button.getScene();
+        assert(scene != null);
 
-        // basically this is to allow for kb shortcuts
-        getRoot().addEventFilter(KeyEvent.KEY_PRESSED, event -> {
-            if (event.getTarget() instanceof TextInputControl && keyCombination.match(event)) {
-                menuItem.getOnAction().handle(new ActionEvent());
-                event.consume();
+        scene.getAccelerators().put(keyCombination,
+                new Runnable() {
+                    @FXML
+                    public void run() {
+                        button.fire();
+                    }
+                });
+    }
+
+    void setEventHandlers() {
+        this.getRoot().addEventHandler(LogOnceEvent.LOGONCE_EVENT_TYPE, new LogOnceEventHandler() {
+            @Override
+            public void onDisplayOrderEvent(Order order) {
+                showOrderInfo(order);
+            }
+
+            @Override
+            public void onDisplayClientEvent(Client client) {
+                showClientInfo(client);
+            }
+
+            @Override
+            public void onDeletionEvent(String command) {
+                extraInfoPlaceholder.getChildren().clear();
+                try {
+                    executeCommand(command);
+                } catch (CommandException | ParseException e) {
+                    // there is no need to do anything as error handling has already been performed
+                    // inside the method
+                    // hence this catch block is empty
+                }
             }
         });
+    }
+
+    void showOrderInfo(Order order) {
+        extraInfoPlaceholder.getChildren().clear();
+        extraInfoPlaceholder.getChildren().add(new OrderInfoDisplay(order).getRoot());
+    }
+
+    void showClientInfo(Client client) {
+        extraInfoPlaceholder.getChildren().clear();
+        extraInfoPlaceholder.getChildren().add(new ClientInfoDisplay(client).getRoot());
     }
 
     /**
@@ -114,13 +165,19 @@ public class MainWindow extends UiPart<Stage> {
      */
     void fillInnerParts() {
         personListPanel = new PersonListPanel(logic.getFilteredPersonList());
+        orderListPanel = new OrderListPanel(logic.getFilteredOrderList());
+
         personListPanelPlaceholder.getChildren().add(personListPanel.getRoot());
 
         resultDisplay = new ResultDisplay();
         resultDisplayPlaceholder.getChildren().add(resultDisplay.getRoot());
+        // AnchorPane.setLeftAnchor(resultDisplay.getRoot(), 10.0);
+        resultDisplayPlaceholder.setAlignment(Pos.CENTER_LEFT);
 
         StatusBarFooter statusBarFooter = new StatusBarFooter(logic.getAddressBookFilePath());
         statusbarPlaceholder.getChildren().add(statusBarFooter.getRoot());
+        // AnchorPane.setRightAnchor(statusBarFooter.getRoot(), 10.0);
+        statusbarPlaceholder.setAlignment(Pos.CENTER_RIGHT);
 
         CommandBox commandBox = new CommandBox(this::executeCommand);
         commandBoxPlaceholder.getChildren().add(commandBox.getRoot());
@@ -135,6 +192,48 @@ public class MainWindow extends UiPart<Stage> {
         if (guiSettings.getWindowCoordinates() != null) {
             primaryStage.setX(guiSettings.getWindowCoordinates().getX());
             primaryStage.setY(guiSettings.getWindowCoordinates().getY());
+        }
+    }
+
+    /**
+     * Changes the view to display the list of Clients.
+     */
+    @FXML
+    public void handleClients() {
+        if (currentPage != Page.CLIENTS) {
+            // Only execute if clients are not already displayed
+            currentPage = Page.CLIENTS;
+            listTitle.setText(" Clients");
+            personListPanel = new PersonListPanel(logic.getFilteredPersonList());
+            personListPanelPlaceholder.getChildren().clear();
+            personListPanelPlaceholder.getChildren().add(personListPanel.getRoot());
+        } else {
+            listTitle.setText(" Clients");
+
+            personListPanel = new PersonListPanel(logic.getUnfilteredPersonList());
+            personListPanelPlaceholder.getChildren().removeAll();
+            personListPanelPlaceholder.getChildren().add(personListPanel.getRoot());
+        }
+    }
+
+    /**
+     * Changes the view to display the list of Orders.
+     */
+    @FXML
+    public void handleOrders() {
+        if (currentPage != Page.ORDERS) {
+            // Only execute if orders are not already displayed
+            currentPage = Page.ORDERS;
+            listTitle.setText(" Orders");
+            orderListPanel = new OrderListPanel(logic.getFilteredOrderList());
+            personListPanelPlaceholder.getChildren().clear();
+            personListPanelPlaceholder.getChildren().add(orderListPanel.getRoot());
+        } else {
+            listTitle.setText(" Orders");
+
+            orderListPanel = new OrderListPanel(logic.getUnfilteredOrderList());
+            personListPanelPlaceholder.getChildren().removeAll();
+            personListPanelPlaceholder.getChildren().add(orderListPanel.getRoot());
         }
     }
 
@@ -170,12 +269,35 @@ public class MainWindow extends UiPart<Stage> {
         return personListPanel;
     }
 
+    private void handleError() {
+        if (!errorWindow.isShowing()) {
+            errorWindow.show();
+        } else {
+            errorWindow.focus();
+        }
+    }
+
+    @FXML
+    private void handleAdd() {
+        if (currentPage == Page.CLIENTS) {
+            System.out.println("kak");
+            extraInfoPlaceholder.getChildren().clear();
+            extraInfoPlaceholder.getChildren().add(newClientForm.getRoot());
+        } else if (currentPage == Page.ORDERS) {
+            System.out.println("kek");
+            extraInfoPlaceholder.getChildren().clear();
+            extraInfoPlaceholder.getChildren().add(newOrderForm.getRoot());
+        } else {
+            extraInfoPlaceholder.getChildren().removeAll();
+        }
+    }
+
     /**
      * Executes the command and returns the result.
      *
      * @see seedu.address.logic.Logic#execute(String)
      */
-    private CommandResult executeCommand(String commandText) throws CommandException, ParseException {
+    CommandResult executeCommand(String commandText) throws CommandException, ParseException {
         try {
             CommandResult commandResult = logic.execute(commandText);
             logger.info("Result: " + commandResult.getFeedbackToUser());
@@ -191,9 +313,16 @@ public class MainWindow extends UiPart<Stage> {
 
             return commandResult;
         } catch (CommandException | ParseException e) {
+            // TODO: set a popup message that can be easily closed by pressing enter
             logger.info("Invalid command: " + commandText);
-            resultDisplay.setFeedbackToUser(e.getMessage());
+            resultDisplay.setFeedbackToUser("Invalid command: " + commandText);
+            errorWindow.setErrorText(e.getMessage());
+            this.handleError();
             throw e;
         }
+    }
+
+    enum Page {
+        CLIENTS, ORDERS;
     }
 }

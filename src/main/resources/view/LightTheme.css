@@ -1,6 +1,6 @@
 .root {
-    -color-menu: #E0E0E0;
-    -color-list: #EEEEEE;
+    -color-menu: #6e7a68;
+    -color-list: #e3e0cf;
 }
 
 /* Scroll bar */
@@ -104,7 +104,7 @@
 
 .result-display .label {
     -fx-text-fill: black !important;
-    -fx-background-color: transparent;
+    -fx-background-color: black;
 }
 
 .status-bar {
@@ -113,7 +113,7 @@
 
 .status-bar .label {
     -fx-font-family: "Segoe UI Light";
-    -fx-text-fill: black;
+    -fx-text-fill: #9fa8a3;
     -fx-padding: 4px;
     -fx-pref-height: 30px;
 }
@@ -155,21 +155,20 @@
     -fx-background-color: transparent;
     -fx-font-family: "Segoe UI", Helvetica, Arial, sans-serif;
     -fx-font-size: 20pt;
-    -fx-text-fill: #888888;
     -fx-background-insets: 0 0 0 0, 0, 1, 2;
 }
 
 .button:hover {
-    -fx-background-color: derive(-fx-background-color, 75%);
+    -fx-background-color: derive(-color-menu, 30%);
 }
 
 .button:pressed, .button:default:hover:pressed {
-  -fx-background-color: derive(-fx-background-color, 50%);
+  -fx-background-color: derive(-color-menu, 50%);
   -fx-text-fill: #1d1d1d;
 }
 
 .button:focused {
-    -fx-background-color: derive(-fx-background-color, 75%);
+    -fx-background-color: derive(-color-menu, 50%);
 }
 
 .button:disabled, .button:default:disabled {
@@ -187,4 +186,9 @@
     -fx-background-color: derive(-fx-focus-color, 30%);
 }
 
+/* PersonListCard */
+.cell-big-label {
+}
 
+.cell-small-label {
+}

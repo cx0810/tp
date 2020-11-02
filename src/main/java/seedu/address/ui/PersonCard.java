@@ -1,11 +1,14 @@
 package seedu.address.ui;
 
 import javafx.fxml.FXML;
+import javafx.scene.Node;
 import javafx.scene.control.Label;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
 import seedu.address.model.person.Client;
+import seedu.address.ui.events.DisplayClientEvent;
 
 /**
  * An UI component that displays information of a {@code Person}.
@@ -46,10 +49,17 @@ public class PersonCard extends UiPart<Region> {
         super(FXML);
         this.client = client;
         id.setText(displayedIndex + ". ");
-        name.setText(client.getName().fullName);
+        name.setText(client.getName().fullName + " [ID#" + String.format("%05d", client.getClientId()) + "]");
         phone.setText(client.getPhone().value);
         address.setText(client.getAddress().value);
         email.setText(client.getEmail().value);
+        setEventHandlers(this.getRoot());
+    }
+
+    private void setEventHandlers(Node node) {
+        node.addEventHandler(MouseEvent.MOUSE_CLICKED, event -> {
+            node.fireEvent(new DisplayClientEvent(client));
+        });
     }
 
     @Override

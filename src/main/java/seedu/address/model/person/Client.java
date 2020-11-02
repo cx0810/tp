@@ -2,11 +2,12 @@ package seedu.address.model.person;
 
 import static seedu.address.commons.util.CollectionUtil.requireAllNonNull;
 
-import java.util.HashSet;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
-import java.util.Set;
 
-import seedu.address.model.tag.Tag;
+import seedu.address.commons.core.index.Index;
+
 
 /**
  * Represents a Person in the address book.
@@ -18,10 +19,11 @@ public class Client {
     private final Name name;
     private final Phone phone;
     private final Email email;
+    private Index clientId;
 
     // Data fields
     private final Address address;
-    private final Set<Tag> tags = new HashSet<>();
+    private List<Index> orders;
 
     /**
      * Every field must be present and not null.
@@ -32,6 +34,21 @@ public class Client {
         this.phone = phone;
         this.email = email;
         this.address = address;
+        this.clientId = Index.fromZeroBased(0);
+        this.orders = new ArrayList<>();
+    }
+
+    /**
+     * Used when loading clients from an existing file
+     */
+    public Client(Name name, Phone phone, Email email, Address address, Index clientId, List<Index> orders) {
+        requireAllNonNull(name, phone, email, address);
+        this.name = name;
+        this.phone = phone;
+        this.email = email;
+        this.address = address;
+        this.clientId = clientId;
+        this.orders = orders;
     }
 
     public Name getName() {
@@ -48,6 +65,18 @@ public class Client {
 
     public Address getAddress() {
         return address;
+    }
+
+    public int getClientId() {
+        return clientId.getZeroBased();
+    }
+
+    public List<Index> getOrders() {
+        return orders;
+    }
+
+    public void setClientId(int id) {
+        this.clientId = Index.fromZeroBased(id);
     }
 
     /**
@@ -88,7 +117,7 @@ public class Client {
     @Override
     public int hashCode() {
         // use this method for custom fields hashing instead of implementing your own
-        return Objects.hash(name, phone, email, address, tags);
+        return Objects.hash(name, phone, email, address);
     }
 
     @Override

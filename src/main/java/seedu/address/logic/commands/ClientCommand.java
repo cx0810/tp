@@ -6,10 +6,14 @@ import static seedu.address.logic.parser.CliSyntax.CLIENT_PREFIX_EMAIL;
 import static seedu.address.logic.parser.CliSyntax.CLIENT_PREFIX_NAME;
 import static seedu.address.logic.parser.CliSyntax.CLIENT_PREFIX_PHONE;
 
+import seedu.address.logic.CommandHistory;
 import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.model.Model;
 import seedu.address.model.person.Client;
 
+/**
+ * Adds a client to the address book.
+ */
 public class ClientCommand extends Command {
     public static final String COMMAND_WORD = "client";
 
@@ -34,7 +38,7 @@ public class ClientCommand extends Command {
     }
 
     @Override
-    public CommandResult execute(Model model) throws CommandException {
+    public CommandResult execute(Model model, CommandHistory history) throws CommandException {
         requireNonNull(model);
 
         if (model.hasPerson(toAdd)) {
@@ -42,6 +46,7 @@ public class ClientCommand extends Command {
         }
 
         model.addPerson(toAdd);
+        model.commitAddressBook();
         return new CommandResult(String.format(MESSAGE_SUCCESS, toAdd));
     }
 

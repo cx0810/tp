@@ -133,19 +133,140 @@ Classes used by multiple components are in the `seedu.addressbook.commons` packa
 
 This section describes some noteworthy details on how certain features are implemented.
 
-### \[Proposed\] Undo/redo feature
+### User Interface
 
-#### Proposed Implementation
+#### Proposed implementation
 
-The proposed undo/redo mechanism is facilitated by `VersionedAddressBook`. It extends `AddressBook` with an undo/redo history, stored internally as an `addressBookStateList` and `currentStatePointer`. Additionally, it implements the following operations:
+The updated user interface has three columns: the leftmost column acts as a navigation menu, the middle column displays 
+the list of Clients/Orders and the rightmost column is supposed to display more details about the Client/Order.
+
+The switching of views is done by calling methods defined in MainWindow from the FXML file, upon clicking on the 
+respective button. These methods are exposed in the `MainWindow` class as `handleClients()` and `handleOrders()`.
+
+_{Diagram will be added at a later date}_
+
+Step 1. The user launches the application, and the User Interface is created.
+
+Step 2. The user clicks on the `Orders` button in order to view the orders. The button will call the function 
+`handleOrders()`, causing the view in the middle column to display the list of Orders.
+
+Step 2. The user clicks on the `Clients` button in order to view the clients. The button will call the function 
+`handleClients()`, causing the view in the middle column to display the list of Clients.
+
+Step 3. The user clicks on the `Help` button in order to find the link to the user guide. The button will call the 
+function `handleHelp()`, which will open a dialog box with the link to the user guide.
+
+Step 4. The user clicks on the `Exit` button in order to close the application. The button will call the function 
+`handleExit`, which will close the application.
+
+### Find feature
+
+The find mechanism is facilitated by `FindCommand`, `FindCommandParser`, `FindOrderCommand` and `FindOrderCommandParser`. `FindCommandParser` and `FindOrderCommandParser` implement `Parser`.
+`FindCommand` and `FindOrderCommand` extend `Command`.
+
+These two commands allows the user to search for `Clients` and `Orders` by the name or description respectively.
+
+Currently, the search operations for both `Clients` and `Orders` are very similar. Given a command (e.g. `find adam jane` or `findorder iPhone iPad`), the command is processed by `AddressBookParser` and
+passed to the corresponding parsers. There, the parser will process the given arguments and will search for all `Clients`/`Orders` whose name or description contain any
+of the keywords give. For example, If there were two clients, one named 'Adam' and one named 'Jane', both clients will show up in the search results.
+
+The parsers will split the provided search terms into an array, and match them with client names or order descriptions through the use of streams. The current implementation of `FindOrderCommand`
+and `FindOrderCommandParser` are simply adapted from the `FindCommand` and `FindCommandParser` respectively. This was done to ensure a minimally functional feature
+Thus, tokens are currently unused for more specific searches.
+
+\[Proposed enhancements\]:
+
+* Usage of optional tokens such as `--date`, `--address`, `--email` to narrow down search range. It will be implemented similarly (by matching keywords). A client or an order
+must match at least one of the keywords in each category in order to be shown in the search results. The list of clients/orders will be converted
+into a stream and be filtered by multiple predicates, each corresponding to a data field within `Client`/`Order`.
+
+* A further enhncement would be to reduce the strictness of the token search. Instead of having to match at least one keyword from each category,
+any keyword match in any category would allow for the order or client to show up in the search results. This will be done by maintaining different filtered lists and combining them
+while ignoring duplicates.
+
+Given below are examples of usage scenarios and how the two commands behave at each step
+
+_{Diagram will be added at a later date}_
+
+### Delete Feature
+
+The delete mechanism is split into two functionalities - `Delete Order` and `Delete Client`.
+
+The delete mechanism is facilitated by `DeleteOrderCommand`, `DeleteOrderCommandParser`, `DeleteClientCommand`, 
+`DeleteClientCommandParser`, `AddressBook` and `ModelManager`. 
+
+`DeleteOrderCommand` and `DeleteClientCommand` extends `Command`, `DeleteOrderCommandParser` and 
+`DeleteClientCommandParser` implements `Parser`, `AddressBook` implements `ReadOnlyAddressBook` and `ModelManager` 
+implements `Model`.
+
+These operations are exposed in the `Model` interface as `Model#deletePerson()` and `Model#deleteOrder()`. They are also
+exposed in the `AddressBook` class as `AddressBook#removeClient()` and `AddressBook#removeOrder()`.
+
+the `Delete Order` and `Delete Client` differs such that `Delete Order` is dependent on `Delete Client`. This is the 
+most distinctive difference where deleting a client from the client list will delete some orders from the order 
+list too.
+
+Given below is an example usage scenario and how the delete mechanism behaves at each step.
+
+**Delete Order**
+
+Step 1. The user launches application and views his/her list of 5 orders.
+
+Step 2. The user executes `order --description 123 --client 1 --address 123 --date 2020-12-12 2359`. An order is created
+ and appended to the end of the order list. There are now a total of 6 orders in the order list.
+
+Step 3. The user decides to remove the order he had just created. The user notes that the order is at the last index 
+of the order list. The user executes `delete-order --order 6` to remove the order from the order list.
+
+The following sequence diagram shows how the delete order operation works :
+
+_diagrams will be uploaded soon_
+
+**Delete Client**
+
+Step 1. The user launches application and views his/her list of 5 clients.
+
+Step 2. The user executes `client --name john --address 123 --email john@gmail.com --phone 12345678`. A a client is 
+created and appended to the end of the client list. There are now a total of 6 clients in the client list.
+
+Step 3. The user decides to remove the client he had just created. The user notes that the client is at the last index 
+of the client list. The user executes `delete-client --client 6` to remove the client from the client list.
+
+Step 4. When user deletes the client, all orders linked to the client will also be deleted.
+
+The following sequence diagram shows how the delete client operation works :
+
+_diagrams will be uploaded soon_
+
+### List Feature
+
+The list mechanism is split into two functionalities - `List Order` and `List Client`.
+
+These two commands allows the user to list the `Clients` and `Orders` present in the system respectively.
+
+The list mechanism is facilitated by `ListCommand`, `ListOrderCommand`, `Model`, `ModelManager` and `AddressBook`.
+
+`ListCommand` and `ListOrderCommand` extends `Command`. `AddressBook` implements `ReadOnlyAddressBook` and `ModelManager` implements `Model`.
+
+These operations are exposed in the `Model` interface as `getFilteredOrderList()` and `getFilteredPersonList()`. They are also exposed in the `AddressBook` as `getOrderList` and `getPersonList`.
+
+\[Proposed enhancements\]:
+* Use `list` to display the orders of each client in the same panel. 
+
+Given below is an example usage scenario of how the list mechanism behaves at each step.
+
+_{Diagrams will be added at a later date}_
+
+### Undo Feature
+
+The undo mechanism is facilitated by `VersionedAddressBook`. It extends `AddressBook` with an undo history, stored internally as an `addressBookStateList` and `currentStatePointer`. Additionally, it implements the following operations:
 
 * `VersionedAddressBook#commit()` — Saves the current address book state in its history.
 * `VersionedAddressBook#undo()` — Restores the previous address book state from its history.
-* `VersionedAddressBook#redo()` — Restores a previously undone address book state from its history.
 
-These operations are exposed in the `Model` interface as `Model#commitAddressBook()`, `Model#undoAddressBook()` and `Model#redoAddressBook()` respectively.
+These operations are exposed in the `Model` interface as `Model#commitAddressBook()` and `Model#undoAddressBook()` respectively.
 
-Given below is an example usage scenario and how the undo/redo mechanism behaves at each step.
+Given below is an example usage scenario and how the undo mechanism behaves at each step.
 
 Step 1. The user launches the application for the first time. The `VersionedAddressBook` will be initialized with the initial address book state, and the `currentStatePointer` pointing to that single address book state.
 
@@ -180,17 +301,16 @@ The following sequence diagram shows how the undo operation works:
 
 </div>
 
-The `redo` command does the opposite — it calls `Model#redoAddressBook()`, which shifts the `currentStatePointer` once to the right, pointing to the previously undone state, and restores the address book to that state.
 
-<div markdown="span" class="alert alert-info">:information_source: **Note:** If the `currentStatePointer` is at index `addressBookStateList.size() - 1`, pointing to the latest address book state, then there are no undone AddressBook states to restore. The `redo` command uses `Model#canRedoAddressBook()` to check if this is the case. If so, it will return an error to the user rather than attempting to perform the redo.
+<div markdown="span" class="alert alert-info">:information_source: **Note:** If the `currentStatePointer` is at index `addressBookStateList.size() - 1`, pointing to the latest address book state, then there are no undone AddressBook states to restore. 
 
 </div>
 
-Step 5. The user then decides to execute the command `list`. Commands that do not modify the address book, such as `list`, will usually not call `Model#commitAddressBook()`, `Model#undoAddressBook()` or `Model#redoAddressBook()`. Thus, the `addressBookStateList` remains unchanged.
+Step 5. The user then decides to execute the command `list`. Commands that do not modify the address book, such as `list`, will usually not call `Model#commitAddressBook()` or `Model#undoAddressBook()`. Thus, the `addressBookStateList` remains unchanged.
 
 ![UndoRedoState4](images/UndoRedoState4.png)
 
-Step 6. The user executes `clear`, which calls `Model#commitAddressBook()`. Since the `currentStatePointer` is not pointing at the end of the `addressBookStateList`, all address book states after the `currentStatePointer` will be purged. Reason: It no longer makes sense to redo the `add n/David …​` command. This is the behavior that most modern desktop applications follow.
+Step 6. The user executes `clear`, which calls `Model#commitAddressBook()`. Since the `currentStatePointer` is not pointing at the end of the `addressBookStateList`, all address book states after the `currentStatePointer` will be purged.
 
 ![UndoRedoState5](images/UndoRedoState5.png)
 
@@ -200,13 +320,13 @@ The following activity diagram summarizes what happens when a user executes a ne
 
 #### Design consideration:
 
-##### Aspect: How undo & redo executes
+##### Aspect: How undo executes
 
 * **Alternative 1 (current choice):** Saves the entire address book.
   * Pros: Easy to implement.
   * Cons: May have performance issues in terms of memory usage.
 
-* **Alternative 2:** Individual command knows how to undo/redo by
+* **Alternative 2:** Individual command knows how to undo by
   itself.
   * Pros: Will use less memory (e.g. for `delete`, just save the person being deleted).
   * Cons: We must ensure that the implementation of each individual command are correct.
@@ -217,6 +337,16 @@ _{more aspects and alternatives to be added}_
 
 _{Explain here how the data archiving feature will be implemented}_
 
+### Update-client feature
+
+The Update-client mechanism is facilitated by `UpdateClientCommand` and `UpdateClientCommandParser`. `UpdateClientCommandParser` implement `Parser`.
+`UpdateClientCommand` extend `Command`.
+
+This command allows the user to update an existing `Client` by their index.
+
+The parser will split the provided terms into an array, obtain what field is to be updated (`Name`, `Address`, `Email`, `Phone`) and obtain the field that is to be updated.
+
+Upon calling the `Execute` method in UpdateClientCommand, the model is queried to obtain the list of clients. From this list, the client is obtained, removed and a new client with the updated field is added into the same index as the deleted client.
 
 --------------------------------------------------------------------------------------------------------------------
 
@@ -242,7 +372,7 @@ _{Explain here how the data archiving feature will be implemented}_
 * prefers typing to mouse interactions
 * is reasonably comfortable using CLI apps
 
-**Value proposition**: Allows for convenient and fast generation of internal documents for archiving for the logistics clerk. 
+**Value proposition**: Allows for convenient and fast generation of internal documents for archiving for the logistics clerk.
 
 The application would speed up their work as they would no longer need to fill up separate forms (invoices, 
 shipping manifests etc) with overlapping data as it would now be automated, thus increasing productivity. 
@@ -253,16 +383,17 @@ The product will be a base application that can be customized to fit different c
 
 Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unlikely to have) - `*`
 
-| Priority | As a …​                | I want to …​                                             | So that I can…​                                            |
-| -------- | --------------------- | ------------------------------------------------------- | --------------------------------------------------------- |
-| `* * *`  | logistics clerk       | add client information                                  | store data of clients                                     |
-| `* * *`  | logistics clerk       | add order information                                   | store order data of clients                               |          
-| `* * *`  | logistics clerk       | add warehouse inventory information                     | store inventory data of warehouse                         |
-| `* * *`  | logistics clerk       | delete client information                               | remove client from the client list                        |
-| `* * *`  | logistics clerk       | delete order information                                | remove order from the data                                |
-| `* * *`  | logistics clerk       | delete warehouse inventory information                  | remove outdated information                               |
-| `* * *`  | logistics clerk       | view details of individual orders                       | easily view the information i need for every order placed | 
-| `* * *`  | logistics clerk       | attach orders to clients                                | easily track all orders involving the particular client   | 
+| Priority | As a …​                | I want to …​                                             | So that I can…​                                                    |
+| -------- | --------------------- | ------------------------------------------------------- | ----------------------------------------------------------------- |
+| `* * *`  | logistics clerk       | add client information                                  | store data of clients                                             |
+| `* * *`  | logistics clerk       | add order information                                   | store order data of clients                                       |          
+| `* * *`  | logistics clerk       | add warehouse inventory information                     | store inventory data of warehouse                                 |
+| `* * *`  | logistics clerk       | delete client information                               | remove client from the client list                                |
+| `* * *`  | logistics clerk       | delete order information                                | remove order from the data                                        |
+| `* * *`  | logistics clerk       | delete warehouse inventory information                  | remove outdated information                                       |
+| `* * *`  | logistics clerk       | view details of individual orders                       | easily view the information i need for every order placed         | 
+| `* * *`  | logistics clerk       | view details of individual clients                      | easily view the information i need for every client in the system |
+| `* * *`  | logistics clerk       | attach orders to clients                                | easily track all orders involving the particular client           | 
 *{More to be added}*
 
 ### Use cases

@@ -7,6 +7,7 @@ import java.util.List;
 
 import seedu.address.commons.core.Messages;
 import seedu.address.commons.core.index.Index;
+import seedu.address.logic.CommandHistory;
 import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.model.Model;
 import seedu.address.model.person.Client;
@@ -32,16 +33,30 @@ public class DeleteClientCommand extends Command {
     }
 
     @Override
-    public CommandResult execute(Model model) throws CommandException {
+    public CommandResult execute(Model model, CommandHistory history) throws CommandException {
         requireNonNull(model);
         List<Client> lastShownList = model.getFilteredPersonList();
+        int targetId = targetIndex.getOneBased();
 
-        if (targetIndex.getZeroBased() >= lastShownList.size()) {
+
+        boolean isClientFound = false;
+        Client clientToDelete = null;
+        for (Client client : lastShownList) {
+            if (client.getClientId() == targetId) {
+                // client is found with correct client id
+                clientToDelete = client;
+                isClientFound = true;
+                break;
+            }
+        }
+
+        if (!isClientFound) {
             throw new CommandException(Messages.MESSAGE_INVALID_CLIENT_DISPLAYED_INDEX);
         }
 
-        Client clientToDelete = lastShownList.get(targetIndex.getZeroBased());
+        requireNonNull(clientToDelete);
         model.deletePerson(clientToDelete);
+        model.commitAddressBook();
         return new CommandResult(String.format(MESSAGE_DELETE_CLIENT_SUCCESS, clientToDelete));
     }
 

@@ -14,6 +14,7 @@ import seedu.address.model.person.Order;
 public interface Model {
     /** {@code Predicate} that always evaluate to true */
     Predicate<Client> PREDICATE_SHOW_ALL_PERSONS = unused -> true;
+    Predicate<Order> PREDICATE_SHOW_ALL_ORDERS = unused -> true;
 
     /**
      * Replaces user prefs data with the data in {@code userPrefs}.
@@ -86,6 +87,9 @@ public interface Model {
      */
     void updateFilteredPersonList(Predicate<Client> predicate);
 
+    /** Returns an unmodifiable view of the unfiltered person list */
+    ObservableList<Client> getUnfilteredPersonList();
+
     /**
      * Returns true if a order with the same identity as {@code order} exists in the order book.
      */
@@ -118,4 +122,22 @@ public interface Model {
      * @throws NullPointerException if {@code predicate} is null.
      */
     void updateFilteredOrderList(Predicate<Order> predicate);
+
+    /** Returns an unmodifiable view of the unfiltered order list */
+    ObservableList<Order> getUnfilteredOrderList();
+
+    /**
+     * Returns true if the model has previous address book states to restore.
+     */
+    boolean canUndoAddressBook();
+
+    /**
+     * Restores the model's address book to its previous state.
+     */
+    void undoAddressBook();
+
+    /**
+     * Saves the current address book state for undo/redo.
+     */
+    void commitAddressBook();
 }
